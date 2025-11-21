@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulasi Lensa Cembung & Cekung</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0d0d1a;
+            color: #f5f5ff;
+            overflow: hidden;
+        }
+
+        #main-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .canvas-section {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 55%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: none;
+            border-bottom: none;
+        }
+
+        .canvas-section + .canvas-section {
+            border-left: none;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .section-label {
+            position: absolute;
+            top: 16px;
+            left: 20px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.55);
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            z-index: 5;
+        }
+
+        #toggleControls,
+        #toggleInfo {
+            position: fixed;
+            width: 48px;
+            height: 48px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(118, 75, 162, 0.85);
+            color: #fff;
+            cursor: pointer;
+            font-size: 18px;
+            z-index: 101;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #toggleControls {
+            top: 20px;
+            left: 320px;
+        }
+
+        #toggleControls:not(.controls-visible) {
+            left: 20px;
+        }
+
+        #toggleControls:hover,
+        #toggleInfo:hover {
+            transform: scale(1.05);
+            background: rgba(118, 75, 162, 0.95);
+        }
+
+        #toggleInfo {
+            top: 20px;
+            right: 320px;
+        }
+
+        #toggleInfo:not(.info-visible) {
+            right: 20px;
+        }
+
+        #controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 280px;
+            padding: 22px 24px;
+            border-radius: 18px;
+            background: rgba(19, 19, 35, 0.95);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+            -webkit-backdrop-filter: blur(18px);
+            backdrop-filter: blur(18px);
+            z-index: 100;
+            transition: transform 0.35s ease, opacity 0.35s ease;
+        }
+
+        #controls.hidden {
+            transform: translateX(-340px);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #controls h1 {
+            font-size: 22px;
+            margin-bottom: 18px;
+            text-align: center;
+            color: #f5f5ff;
+        }
+
+        .control-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #c5c5ff;
+            font-weight: 600;
+        }
+
+        .value-display {
+            color: #ffd54f;
+            font-weight: 700;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #a855f7;
+            border: 2px solid #fff;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #a855f7;
+            border: 2px solid #fff;
+            cursor: pointer;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .button-group button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            color: #fefefe;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.25s ease;
+        }
+
+        .button-group button.active {
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            border-color: transparent;
+            box-shadow: 0 6px 18px rgba(236, 72, 153, 0.35);
+        }
+
+        .button-group button:not(.active):hover {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        #info {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 260px;
+            padding: 18px 20px;
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.65);
+            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(16px);
+            transition: transform 0.35s ease, opacity 0.35s ease;
+            z-index: 100;
+        }
+
+        #info.hidden {
+            transform: translateX(340px);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #info h3 {
+            margin-bottom: 8px;
+            color: #ffd700;
+            font-size: 15px;
+        }
+
+        .info-item {
+            margin: 6px 0;
+            font-size: 13px;
+        }
+
+        .info-item strong {
+            color: #64b5f6;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #controls,
+        #info {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+
+<body>
+    <button id="toggleControls" class="controls-visible" title="Toggle Controls">☰</button>
+    <button id="toggleInfo" class="info-visible" title="Toggle Info">ℹ️</button>
+
+    <div id="main-container">
+        <div class="canvas-section">
+            <div class="section-label">📐 Diagram Optik</div>
+            <canvas id="diagramCanvas"></canvas>
+        </div>
+        <div class="canvas-section">
+            <div class="section-label">👁️ Pandangan Melalui Lensa</div>
+            <canvas id="viewCanvas"></canvas>
+        </div>
+    </div>
+
+    <div id="controls">
+        <h1>🔬 Simulasi Lensa</h1>
+
+        <div class="control-group">
+            <label>
+                Tipe Lensa
+            </label>
+            <div class="button-group">
+                <button id="btnConvex" class="active">Cembung (Konvergen)</button>
+                <button id="btnConcave">Cekung (Divergen)</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label for="curvature">
+                Kelengkungan Lensa
+                <span class="value-display" id="curvatureValue">1.5</span>
+            </label>
+            <input type="range" id="curvature" min="0.5" max="3.0" step="0.1" value="1.5">
+        </div>
+
+        <div class="control-group">
+            <label for="refractive">
+                Indeks Refraksi
+                <span class="value-display" id="refractiveValue">1.5</span>
+            </label>
+            <input type="range" id="refractive" min="1.3" max="2.0" step="0.05" value="1.5">
+        </div>
+
+        <div class="control-group">
+            <label for="objectDist">
+                Jarak Objek
+                <span class="value-display" id="objectDistValue">5.0</span>
+            </label>
+            <input type="range" id="objectDist" min="2.0" max="10.0" step="0.5" value="5.0">
+        </div>
+
+        <div class="control-group">
+            <label for="thickness">
+                Ketebalan Lensa
+                <span class="value-display" id="thicknessValue">0.3</span>
+            </label>
+            <input type="range" id="thickness" min="0.1" max="0.8" step="0.05" value="0.3">
+        </div>
+    </div>
+
+    <div id="info">
+        <h3>ℹ️ Informasi Lensa</h3>
+        <div class="info-item"><strong>Tipe:</strong> <span id="infoType">Cembung</span></div>
+        <div class="info-item"><strong>Fokus (f):</strong> <span id="infoFocus">0.0</span> unit</div>
+        <div class="info-item"><strong>Jarak Bayangan (v):</strong> <span id="infoImageDist">0.0</span> unit</div>
+        <div class="info-item"><strong>Perbesaran (M):</strong> <span id="infoMag">0.0</span>x</div>
+        <div class="info-item"><strong>Sifat Bayangan:</strong> <span id="infoNature">-</span></div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // Variables
+        let lensType = 'convex';
+        let curvature = 1.5;
+        let refractiveIndex = 1.5;
+        let objectDistance = 5.0;
+        let thickness = 0.3;
+
+        // Canvas contexts
+        const diagramCanvas = document.getElementById('diagramCanvas');
+        const viewCanvas = document.getElementById('viewCanvas');
+        const viewCtx = viewCanvas.getContext('2d');
+
+        // --- Three.js scene for left window ---
+        const diagramRenderer = new THREE.WebGLRenderer({
+            canvas: diagramCanvas,
+            antialias: true
+        });
+        diagramRenderer.setPixelRatio(window.devicePixelRatio || 1);
+        diagramRenderer.setClearColor('#0a0a15', 1);
+
+        const diagramScene = new THREE.Scene();
+        const diagramCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
+        diagramCamera.position.set(0, 0, 350);
+
+        const controls = new OrbitControls(diagramCamera, diagramCanvas);
+        controls.enableDamping = true;
+        controls.enablePan = false;
+        controls.minDistance = 120;
+        controls.maxDistance = 600;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        diagramScene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(120, 140, 260);
+        diagramScene.add(dirLight);
+
+        const axisGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-500, 0, 0),
+            new THREE.Vector3(500, 0, 0)
+        ]);
+        const axisMaterial = new THREE.LineDashedMaterial({
+            color: 0xffaa00,
+            dashSize: 20,
+            gapSize: 14,
+            linewidth: 1
+        });
+        const principalAxis = new THREE.Line(axisGeometry, axisMaterial);
+        principalAxis.computeLineDistances();
+        diagramScene.add(principalAxis);
+
+        const grid = new THREE.GridHelper(600, 12, 0x222244, 0x111122);
+        grid.rotation.x = Math.PI / 2;
+        grid.position.z = -40;
+        diagramScene.add(grid);
+
+        const lensMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0x88ccff,
+            metalness: 0.05,
+            roughness: 0.2,
+            transparent: true,
+            opacity: 0.4,
+            transmission: 0.85,
+            thickness: 3
+        });
+        const lensMesh = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 2), lensMaterial);
+        diagramScene.add(lensMesh);
+
+        const objectArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 80, 0xff4444);
+        diagramScene.add(objectArrow);
+
+        const imageArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 80, 0x44ff44);
+        imageArrow.visible = false;
+        diagramScene.add(imageArrow);
+
+        const raysGroup = new THREE.Group();
+        diagramScene.add(raysGroup);
+
+        const focalMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+        const focalGeometry = new THREE.SphereGeometry(5, 16, 16);
+        const focalHelpers = [
+            new THREE.Mesh(focalGeometry, focalMaterial.clone()),
+            new THREE.Mesh(focalGeometry, focalMaterial.clone())
+        ];
+        focalHelpers.forEach(mesh => diagramScene.add(mesh));
+
+        function animateDiagram() {
+            controls.update();
+            diagramRenderer.render(diagramScene, diagramCamera);
+            requestAnimationFrame(animateDiagram);
+        }
+        animateDiagram();
+
+        // Resize canvases
+        function resizeCanvases() {
+            const width = window.innerWidth / 2;
+            const height = window.innerHeight;
+            
+            diagramCanvas.width = width;
+            diagramCanvas.height = height;
+            diagramRenderer.setSize(width, height, false);
+            diagramCamera.aspect = width / height;
+            diagramCamera.updateProjectionMatrix();
+            
+            viewCanvas.width = width;
+            viewCanvas.height = height;
+            
+            updateDiagramScene();
+            drawView();
+        }
+
+        // Calculate focal length using thick lens formula
+        function calculateFocalLength() {
+            const n = refractiveIndex;
+            const d = thickness; // lens thickness in units
+            
+            // Define radius of curvature based on lens type
+            let R1, R2;
+            const baseRadius = 4 / curvature;
+            
+            if (lensType === 'convex') {
+                // Biconvex lens: both surfaces curve outward
+                R1 = baseRadius;   // positive (curves to the right)
+                R2 = -baseRadius;  // negative (curves to the left)
+            } else {
+                // Biconcave lens: both surfaces curve inward
+                R1 = -baseRadius;  // negative (curves to the left)
+                R2 = baseRadius;   // positive (curves to the right)
+            }
+
+            // Thick lens formula: 1/f = (n-1)[1/R1 - 1/R2 + (n-1)*d/(n*R1*R2)]
+            // Note: term2 sign is automatically handled by R1*R2 sign
+            const term1 = (1 / R1) - (1 / R2);
+            const term2 = ((n - 1) * d) / (n * R1 * R2);
+            const power = (n - 1) * term1 + ((n - 1) * (n - 1) * d) / (n * R1 * R2);
+            
+            // Avoid division by zero
+            if (Math.abs(power) < 0.0001) {
+                return Infinity;
+            }
+            
+            const f = 1 / power;
+            return f;
+        }
+
+        // Calculate image properties
+        function calculateImage() {
+            const f = calculateFocalLength();
+            const u = -objectDistance;
+            const v = (f * u) / (u - f);
+            const m = v / u;
+            return { f, v, m };
+        }
+
+        // Build the 3D lens scene (left window)
+        function updateDiagramScene() {
+            const { f, v, m } = calculateImage();
+            const scale3D = 40;
+            const objHeight = 80;
+            const objX = -objectDistance * scale3D;
+            const imgX = v * scale3D;
+            const imgHeight = Math.abs(m) * objHeight;
+            const hasImage = Number.isFinite(v) && Number.isFinite(m);
+
+            if (lensMesh.geometry) {
+                lensMesh.geometry.dispose();
+            }
+            lensMesh.geometry = createLensGeometry(lensType, curvature, thickness);
+            lensMesh.material.color.set(lensType === 'convex' ? 0x88ccff : 0xffbb88);
+
+            objectArrow.position.set(objX, 0, 0);
+            objectArrow.setDirection(new THREE.Vector3(0, 1, 0));
+            objectArrow.setLength(objHeight, 15, 9);
+
+            if (hasImage) {
+                const dir = m < 0 ? new THREE.Vector3(0, -1, 0) : new THREE.Vector3(0, 1, 0);
+                imageArrow.position.set(imgX, 0, 0);
+                imageArrow.setDirection(dir);
+                imageArrow.setLength(imgHeight, 15, 9);
+                imageArrow.setColor(new THREE.Color(m < 0 ? 0xffaa44 : 0x44ff44));
+                imageArrow.visible = true;
+            } else {
+                imageArrow.visible = false;
+            }
+
+            updateFocalHelpers(focalHelpers, f, scale3D);
+
+            updateRayGroup(raysGroup, {
+                objX,
+                objHeight,
+                imgX,
+                imgHeight,
+                m,
+                f,
+                v,
+                hasImage
+            });
+        }
+
+        function createLensGeometry(type, curvatureValue, thicknessValue) {
+            const lensHeight = 150;
+            const halfHeight = lensHeight / 2;
+            const segments = 80;
+            const yValues = [];
+            for (let i = 0; i <= segments; i++) {
+                yValues.push(halfHeight - (i / segments) * lensHeight);
+            }
+
+            const computeRadius = (norm) => {
+                const curvatureInfluence = (1 / curvatureValue) * 35;
+                if (type === 'convex') {
+                    const bulge = curvatureInfluence * (1 - Math.pow(norm, 1.6));
+                    const base = 15 + thicknessValue * 38;
+                    return base + bulge;
+                }
+                const edge = 35 + thicknessValue * 45;
+                const indent = curvatureInfluence * (1 - Math.pow(norm, 1.6));
+                return Math.max(12, edge - indent);
+            };
+
+            const outline = [];
+            for (let i = 0; i < yValues.length; i++) {
+                const y = yValues[i];
+                const norm = Math.abs(y) / halfHeight;
+                const radius = computeRadius(norm);
+                outline.push(new THREE.Vector2(-radius, y));
+            }
+            for (let i = yValues.length - 1; i >= 0; i--) {
+                const y = yValues[i];
+                const norm = Math.abs(y) / halfHeight;
+                const radius = computeRadius(norm);
+                outline.push(new THREE.Vector2(radius, y));
+            }
+
+            const shape = new THREE.Shape();
+            shape.moveTo(outline[0].x, outline[0].y);
+            for (let i = 1; i < outline.length; i++) {
+                shape.lineTo(outline[i].x, outline[i].y);
+            }
+            shape.closePath();
+
+            const depth = 6 + thicknessValue * 100;
+            const geometry = new THREE.ExtrudeGeometry(shape, {
+                depth,
+                bevelEnabled: false,
+                steps: 1
+            });
+            geometry.center();
+            return geometry;
+        }
+
+        function updateFocalHelpers(helpers, focalLength, scale) {
+            const colorConvex = 0xffd700;
+            const colorConcave = 0xff8800;
+            const isFiniteF = Number.isFinite(focalLength) && Math.abs(focalLength) !== Infinity;
+            helpers.forEach((mesh, index) => {
+                mesh.visible = isFiniteF;
+                if (!isFiniteF) return;
+                const dir = index === 0 ? 1 : -1;
+                mesh.position.set(dir * Math.abs(focalLength) * scale, 0, 0);
+                mesh.material.color.set(lensType === 'convex' ? colorConvex : colorConcave);
+                mesh.material.opacity = lensType === 'convex' ? 0.9 : 0.6;
+                mesh.material.transparent = true;
+            });
+        }
+
+        function updateRayGroup(group, data) {
+            while (group.children.length) {
+                const child = group.children.pop();
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(mat => mat && mat.dispose && mat.dispose());
+                    } else if (child.material.dispose) {
+                        child.material.dispose();
+                    }
+                }
+            }
+
+            if (!data.hasImage) return;
+
+            const lensPlaneX = 0;
+            const tipY = data.m < 0 ? -data.imgHeight : data.imgHeight;
+            const objectTop = new THREE.Vector3(data.objX, data.objHeight, 0);
+            const atLens = new THREE.Vector3(lensPlaneX, data.objHeight, 0);
+            const imagePoint = new THREE.Vector3(data.imgX, tipY, 0);
+            const isVirtual = data.v < 0;
+
+            if (!isVirtual) {
+                group.add(buildLine([objectTop, atLens, imagePoint], 0xff3366));
+            } else {
+                const projectedDir = atLens.clone().sub(imagePoint).normalize();
+                const actualEnd = atLens.clone().add(projectedDir.multiplyScalar(220));
+                group.add(buildLine([objectTop, atLens, actualEnd], 0xff3366));
+                group.add(buildLine([atLens, imagePoint], 0xff3366, true));
+            }
+
+            const throughCenter = isVirtual
+                ? atLens.clone().add(new THREE.Vector3(220, (tipY - data.objHeight) * -1, 0))
+                : imagePoint.clone();
+            group.add(buildLine([objectTop, new THREE.Vector3(0, 0, 0), throughCenter], 0x33ff66));
+        }
+
+        function buildLine(points, color, dashed = false) {
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            let material;
+            if (dashed) {
+                material = new THREE.LineDashedMaterial({
+                    color,
+                    dashSize: 8,
+                    gapSize: 4,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                geometry.computeLineDistances();
+            } else {
+                material = new THREE.LineBasicMaterial({
+                    color,
+                    linewidth: 2
+                });
+            }
+            return new THREE.Line(geometry, material);
+        }
+
+        // Draw rays
+        function drawRays(ctx, centerX, centerY, objX, objHeight, imgX, imgHeight, m, f, scale) {
+            const isVirtual = imgX < centerX; // bayangan di sisi kiri lensa = maya
+            
+            // Ray 1: Parallel to axis (red)
+            ctx.strokeStyle = '#ff3366';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(objX, centerY - objHeight);
+            ctx.lineTo(centerX, centerY - objHeight);
+            
+            if (lensType === 'convex') {
+                if (!isVirtual) {
+                    // Real image - ray goes through focal point to image
+                    ctx.lineTo(centerX + f * scale, centerY);
+                    ctx.lineTo(imgX, m < 0 ? centerY + imgHeight : centerY - imgHeight);
+                } else {
+                    // Virtual image - ray refracts away, draw extension back
+                    ctx.lineTo(centerX + f * scale, centerY);
+                    const extendX = centerX + 400;
+                    const slope = (centerY - (centerY - objHeight)) / (centerX + f * scale - centerX);
+                    ctx.lineTo(extendX, centerY + slope * 400);
+                }
+            } else {
+                // Concave - ray diverges
+                const fX = centerX - Math.abs(f) * scale;
+                const extendX = centerX + 400;
+                const rise = objHeight;
+                const run = centerX - fX;
+                const slope = rise / run;
+                ctx.lineTo(extendX, centerY - objHeight + slope * 400);
+            }
+            ctx.stroke();
+
+            // Ray 2: Through center (green)
+            ctx.strokeStyle = '#33ff66';
+            ctx.beginPath();
+            ctx.moveTo(objX, centerY - objHeight);
+            ctx.lineTo(centerX, centerY);
+            
+            if (!isVirtual) {
+                ctx.lineTo(imgX, m < 0 ? centerY + imgHeight : centerY - imgHeight);
+            } else {
+                const slope = objHeight / objectDistance;
+                ctx.lineTo(centerX + 400, centerY - 400 * slope);
+            }
+            ctx.stroke();
+
+            // Virtual ray extensions for concave or convex with virtual image (dashed)
+            if (isVirtual) {
+                ctx.strokeStyle = '#ff3366';
+                ctx.globalAlpha = 0.6;
+                ctx.setLineDash([5, 5]);
+                
+                // Extension from lens to virtual image (ray 1)
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY - objHeight);
+                ctx.lineTo(imgX, m < 0 ? centerY + imgHeight : centerY - imgHeight);
+                ctx.stroke();
+                
+                // Extension for ray 2
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(imgX, m < 0 ? centerY + imgHeight : centerY - imgHeight);
+                ctx.stroke();
+                
+                ctx.setLineDash([]);
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        // Draw view through lens (right side)
+        function drawView() {
+            const ctx = viewCtx;
+            const w = viewCanvas.width;
+            const h = viewCanvas.height;
+
+            // Clear with dark background
+            ctx.fillStyle = '#0a0a15';
+            ctx.fillRect(0, 0, w, h);
+
+            const { f, v, m } = calculateImage();
+
+            // Draw vignette effect
+            const gradient = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w, h) * 0.7);
+            gradient.addColorStop(0, 'rgba(10, 10, 21, 0)');
+            gradient.addColorStop(0.7, 'rgba(10, 10, 21, 0.3)');
+            gradient.addColorStop(1, 'rgba(10, 10, 21, 0.9)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, w, h);
+
+            if (!isFinite(v) || !isFinite(m)) {
+                // No image formed
+                ctx.fillStyle = '#667eea';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Bayangan tidak terbentuk', w/2, h/2);
+                ctx.font = '16px Arial';
+                ctx.fillStyle = '#888';
+                ctx.fillText('(Objek berada di titik fokus)', w/2, h/2 + 40);
+                return;
+            }
+
+            // Draw the image as seen through lens
+            const baseSize = 200;
+            const imgSize = Math.abs(m) * baseSize;
+            const centerX = w / 2;
+            const centerY = h / 2;
+
+            // Draw object/image representation
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            
+            if (m < 0) {
+                // Inverted
+                ctx.scale(1, -1);
+            }
+
+            // Draw arrow
+            const arrowColor = v < 0 ? '#44ff44' : (m < 0 ? '#ffaa44' : '#44ff44');
+            ctx.fillStyle = arrowColor;
+            ctx.strokeStyle = arrowColor;
+            ctx.lineWidth = 6;
+
+            // Shaft
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, -imgSize);
+            ctx.stroke();
+
+            // Head
+            ctx.beginPath();
+            ctx.moveTo(0, -imgSize);
+            ctx.lineTo(-30, -imgSize + 40);
+            ctx.lineTo(30, -imgSize + 40);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+
+            // Info text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            
+            const sizeText = Math.abs(m) > 1 ? 'DIPERBESAR' : Math.abs(m) < 1 ? 'DIPERKECIL' : 'SAMA BESAR';
+            const orientText = m < 0 ? 'TERBALIK' : 'TEGAK';
+            const natureText = v > 0 ? 'NYATA' : 'MAYA';
+
+            ctx.fillText(`${natureText} • ${orientText} • ${sizeText}`, w/2, 60);
+            
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#aaa';
+            ctx.fillText(`Perbesaran: ${m.toFixed(2)}x`, w/2, h - 80);
+            ctx.fillText(`Jarak bayangan: ${v.toFixed(2)} unit`, w/2, h - 55);
+            ctx.fillText(`Fokus: ${f.toFixed(2)} unit`, w/2, h - 30);
+        }
+
+        // Event listeners
+        document.getElementById('toggleControls').addEventListener('click', () => {
+            const controls = document.getElementById('controls');
+            const toggleBtn = document.getElementById('toggleControls');
+            controls.classList.toggle('hidden');
+            toggleBtn.classList.toggle('controls-visible');
+        });
+
+        document.getElementById('toggleInfo').addEventListener('click', () => {
+            const info = document.getElementById('info');
+            const toggleBtn = document.getElementById('toggleInfo');
+            info.classList.toggle('hidden');
+            toggleBtn.classList.toggle('info-visible');
+        });
+
+        document.getElementById('btnConvex').addEventListener('click', () => {
+            lensType = 'convex';
+            document.getElementById('btnConvex').classList.add('active');
+            document.getElementById('btnConcave').classList.remove('active');
+            updateScene();
+        });
+
+        document.getElementById('btnConcave').addEventListener('click', () => {
+            lensType = 'concave';
+            document.getElementById('btnConcave').classList.add('active');
+            document.getElementById('btnConvex').classList.remove('active');
+            updateScene();
+        });
+
+        document.getElementById('curvature').addEventListener('input', (e) => {
+            curvature = parseFloat(e.target.value);
+            document.getElementById('curvatureValue').textContent = curvature.toFixed(1);
+            updateScene();
+        });
+
+        document.getElementById('refractive').addEventListener('input', (e) => {
+            refractiveIndex = parseFloat(e.target.value);
+            document.getElementById('refractiveValue').textContent = refractiveIndex.toFixed(2);
+            updateScene();
+        });
+
+        document.getElementById('objectDist').addEventListener('input', (e) => {
+            objectDistance = parseFloat(e.target.value);
+            document.getElementById('objectDistValue').textContent = objectDistance.toFixed(1);
+            updateScene();
+        });
+
+        document.getElementById('thickness').addEventListener('input', (e) => {
+            thickness = parseFloat(e.target.value);
+            document.getElementById('thicknessValue').textContent = thickness.toFixed(2);
+            updateScene();
+        });
+
+        function updateScene() {
+            updateDiagramScene();
+            drawView();
+            updateInfo();
+        }
+
+        function updateInfo() {
+            const { f, v, m } = calculateImage();
+
+            document.getElementById('infoType').textContent = lensType === 'convex' ? 'Cembung (Konvergen)' : 'Cekung (Divergen)';
+            document.getElementById('infoFocus').textContent = f.toFixed(2);
+            document.getElementById('infoImageDist').textContent = isFinite(v) ? v.toFixed(2) : '∞';
+            document.getElementById('infoMag').textContent = isFinite(m) ? m.toFixed(2) : '∞';
+
+            let nature = '';
+            if (!isFinite(v)) {
+                nature = 'Tidak terbentuk';
+            } else if (lensType === 'convex') {
+                // Lensa cembung
+                if (v > 0 && m < -1) {
+                    nature = 'Nyata, terbalik, diperbesar';
+                } else if (v > 0 && m < 0 && m >= -1) {
+                    nature = 'Nyata, terbalik, diperkecil';
+                } else if (v < 0 && m > 0) {
+                    nature = 'Maya, tegak, diperbesar';
+                }
+            } else {
+                // Lensa cekung - selalu maya, tegak, diperkecil
+                nature = 'Maya, tegak, diperkecil';
+            }
+            document.getElementById('infoNature').textContent = nature;
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', resizeCanvases);
+
+        // Initialize
+        resizeCanvases();
+        updateScene();
+    </script>
+</body>
+
+</html>
