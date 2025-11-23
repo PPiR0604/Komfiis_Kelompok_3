@@ -261,21 +261,21 @@
 
 <body>
     <button id="toggleControls" class="controls-visible" title="Toggle Controls">☰</button>
-    <button id="toggleInfo" class="info-visible" title="Toggle Info">ℹ️</button>
+    <button id="toggleInfo" class="info-visible" title="Toggle Info">ℹ</button>
 
     <div id="main-container">
         <div class="canvas-section">
-            <div class="section-label">📐 Diagram Optik</div>
+            <div class="section-label">Diagram Optik</div>
             <canvas id="diagramCanvas"></canvas>
         </div>
         <div class="canvas-section">
-            <div class="section-label">👁️ Pandangan Melalui Lensa</div>
+            <div class="section-label">Pandangan Melalui Lensa</div>
             <canvas id="viewCanvas"></canvas>
         </div>
     </div>
 
     <div id="controls">
-        <h1>🔬 Simulasi Lensa</h1>
+        <h1>Simulasi Lensa</h1>
 
         <div class="control-group">
             <label>
@@ -321,7 +321,7 @@
     </div>
 
     <div id="info">
-        <h3>ℹ️ Informasi Lensa</h3>
+        <h3>Informasi Lensa</h3>
         <div class="info-item"><strong>Tipe:</strong> <span id="infoType">Cembung</span></div>
         <div class="info-item"><strong>Fokus (f):</strong> <span id="infoFocus">0.0</span> unit</div>
         <div class="info-item"><strong>Jarak Bayangan (v):</strong> <span id="infoImageDist">0.0</span> unit</div>
@@ -341,20 +341,17 @@
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-        // Variables
         let lensType = 'convex';
         let curvature = 1.5;
         let refractiveIndex = 1.5;
         let objectDistance = 5.0;
         let thickness = 0.3;
 
-        // Canvas contexts
         const diagramCanvas = document.getElementById('diagramCanvas');
         const viewCanvas = document.getElementById('viewCanvas');
         const viewCtx = viewCanvas.getContext('2d');
 
-        // --- Three.js scene for left window ---
+        // tampilan window kiri
         const diagramRenderer = new THREE.WebGLRenderer({
             canvas: diagramCanvas,
             antialias: true
@@ -434,7 +431,7 @@
         }
         animateDiagram();
 
-        // Resize canvases
+        // mengatur ukuran canvas
         function resizeCanvases() {
             const width = window.innerWidth / 2;
             const height = window.innerHeight;
@@ -452,32 +449,30 @@
             drawView();
         }
 
-        // Calculate focal length using thick lens formula
+        // Menghitung panjang fokus menggunakan rumus lensa tebal
         function calculateFocalLength() {
             const n = refractiveIndex;
-            const d = thickness; // lens thickness in units
+            const d = thickness; 
             
-            // Define radius of curvature based on lens type
+            // Menentukan Jari jari kelengkungan berdasarkan jenis lensanya
             let R1, R2;
-            const baseRadius = 4 / curvature;
+            const baseRadius = 15 / curvature;
             
             if (lensType === 'convex') {
-                // Biconvex lens: both surfaces curve outward
-                R1 = baseRadius;   // positive (curves to the right)
-                R2 = -baseRadius;  // negative (curves to the left)
+                //cembung: kedua permukaan melengkung keluar
+                R1 = baseRadius;   
+                R2 = -baseRadius;  
             } else {
-                // Biconcave lens: both surfaces curve inward
-                R1 = -baseRadius;  // negative (curves to the left)
-                R2 = baseRadius;   // positive (curves to the right)
+                //cekung: kedua permukaan melengkung ke dalam
+                R1 = -baseRadius;  
+                R2 = baseRadius;  
             }
 
-            // Thick lens formula: 1/f = (n-1)[1/R1 - 1/R2 + (n-1)*d/(n*R1*R2)]
-            // Note: term2 sign is automatically handled by R1*R2 sign
+            // Rumus tebal lensa
             const term1 = (1 / R1) - (1 / R2);
             const term2 = ((n - 1) * d) / (n * R1 * R2);
-            const power = (n - 1) * term1 + ((n - 1) * (n - 1) * d) / (n * R1 * R2);
-            
-            // Avoid division by zero
+            const power = (n - 1) * (term1 - term2);
+       
             if (Math.abs(power) < 0.0001) {
                 return Infinity;
             }
@@ -486,7 +481,7 @@
             return f;
         }
 
-        // Calculate image properties
+        // menhitung properti bayangan
         function calculateImage() {
             const f = calculateFocalLength();
             const u = -objectDistance;
@@ -495,7 +490,7 @@
             return { f, v, m };
         }
 
-        // Build the 3D lens scene (left window)
+        // Membangun scene lensa 3D bagian window kiri
         function updateDiagramScene() {
             const { f, v, m } = calculateImage();
             const scale3D = 40;
@@ -665,11 +660,10 @@
             return new THREE.Line(geometry, material);
         }
 
-        // Draw rays
+        // Menggambar sinar pada diagram optik bagian window kiri
         function drawRays(ctx, centerX, centerY, objX, objHeight, imgX, imgHeight, m, f, scale) {
-            const isVirtual = imgX < centerX; // bayangan di sisi kiri lensa = maya
+            const isVirtual = imgX < centerX; // set supaya bayangan di sisi kiri lensa = maya
             
-            // Ray 1: Parallel to axis (red)
             ctx.strokeStyle = '#ff3366';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -678,18 +672,18 @@
             
             if (lensType === 'convex') {
                 if (!isVirtual) {
-                    // Real image - ray goes through focal point to image
+                    // Bayangan nyata 
                     ctx.lineTo(centerX + f * scale, centerY);
                     ctx.lineTo(imgX, m < 0 ? centerY + imgHeight : centerY - imgHeight);
                 } else {
-                    // Virtual image - ray refracts away, draw extension back
+                    // Bayangan maya  
                     ctx.lineTo(centerX + f * scale, centerY);
                     const extendX = centerX + 400;
                     const slope = (centerY - (centerY - objHeight)) / (centerX + f * scale - centerX);
                     ctx.lineTo(extendX, centerY + slope * 400);
                 }
             } else {
-                // Concave - ray diverges
+                // Cekung (sinarnya menyebar)
                 const fX = centerX - Math.abs(f) * scale;
                 const extendX = centerX + 400;
                 const rise = objHeight;
@@ -699,7 +693,6 @@
             }
             ctx.stroke();
 
-            // Ray 2: Through center (green)
             ctx.strokeStyle = '#33ff66';
             ctx.beginPath();
             ctx.moveTo(objX, centerY - objHeight);
@@ -713,19 +706,19 @@
             }
             ctx.stroke();
 
-            // Virtual ray extensions for concave or convex with virtual image (dashed)
+            // Ekstensi sinar maya untuk lensa cekung atau cembung dengan bayangan maya dengan garis putus-putus
             if (isVirtual) {
                 ctx.strokeStyle = '#ff3366';
                 ctx.globalAlpha = 0.6;
                 ctx.setLineDash([5, 5]);
                 
-                // Extension from lens to virtual image (ray 1)
+                // Ekstensi dari lensa ke gambar virtual 1
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY - objHeight);
                 ctx.lineTo(imgX, m < 0 ? centerY + imgHeight : centerY - imgHeight);
                 ctx.stroke();
                 
-                // Extension for ray 2
+                // Ekstensi dari lensa ke gambar virtual 2
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
                 ctx.lineTo(imgX, m < 0 ? centerY + imgHeight : centerY - imgHeight);
@@ -736,19 +729,17 @@
             }
         }
 
-        // Draw view through lens (right side)
+        // Pov pandangan melalui lensa bagian window kanan
         function drawView() {
             const ctx = viewCtx;
             const w = viewCanvas.width;
             const h = viewCanvas.height;
-
-            // Clear with dark background
             ctx.fillStyle = '#0a0a15';
             ctx.fillRect(0, 0, w, h);
 
             const { f, v, m } = calculateImage();
 
-            // Draw vignette effect
+            // efek vignette
             const gradient = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w, h) * 0.7);
             gradient.addColorStop(0, 'rgba(10, 10, 21, 0)');
             gradient.addColorStop(0.7, 'rgba(10, 10, 21, 0.3)');
@@ -757,7 +748,6 @@
             ctx.fillRect(0, 0, w, h);
 
             if (!isFinite(v) || !isFinite(m)) {
-                // No image formed
                 ctx.fillStyle = '#667eea';
                 ctx.font = 'bold 24px Arial';
                 ctx.textAlign = 'center';
@@ -768,34 +758,33 @@
                 return;
             }
 
-            // Draw the image as seen through lens
+            // Gambar bayangan seperti yang terlihat melalui lensa
             const baseSize = 200;
             const imgSize = Math.abs(m) * baseSize;
             const centerX = w / 2;
             const centerY = h / 2;
 
-            // Draw object/image representation
+            // Gambar representasi objek/bayangan
             ctx.save();
             ctx.translate(centerX, centerY);
             
             if (m < 0) {
-                // Inverted
                 ctx.scale(1, -1);
             }
 
-            // Draw arrow
+            // Gambar panah
             const arrowColor = v < 0 ? '#44ff44' : (m < 0 ? '#ffaa44' : '#44ff44');
             ctx.fillStyle = arrowColor;
             ctx.strokeStyle = arrowColor;
             ctx.lineWidth = 6;
 
-            // Shaft
+            // Batang panah
             ctx.beginPath();
             ctx.moveTo(0, 0);
             ctx.lineTo(0, -imgSize);
             ctx.stroke();
 
-            // Head
+            // Kepala panah
             ctx.beginPath();
             ctx.moveTo(0, -imgSize);
             ctx.lineTo(-30, -imgSize + 40);
@@ -804,8 +793,6 @@
             ctx.fill();
 
             ctx.restore();
-
-            // Info text
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 18px Arial';
             ctx.textAlign = 'center';
@@ -822,8 +809,6 @@
             ctx.fillText(`Jarak bayangan: ${v.toFixed(2)} unit`, w/2, h - 55);
             ctx.fillText(`Fokus: ${f.toFixed(2)} unit`, w/2, h - 30);
         }
-
-        // Event listeners
         document.getElementById('toggleControls').addEventListener('click', () => {
             const controls = document.getElementById('controls');
             const toggleBtn = document.getElementById('toggleControls');
@@ -888,7 +873,7 @@
             document.getElementById('infoType').textContent = lensType === 'convex' ? 'Cembung (Konvergen)' : 'Cekung (Divergen)';
             document.getElementById('infoFocus').textContent = f.toFixed(2);
             document.getElementById('infoImageDist').textContent = isFinite(v) ? v.toFixed(2) : '∞';
-            document.getElementById('infoMag').textContent = isFinite(m) ? m.toFixed(2) : '∞';
+            document.getElementById('infoMag').textContent = isFinite(m) ? Math.abs(m).toFixed(2) : '∞'; 
 
             let nature = '';
             if (!isFinite(v)) {
@@ -903,16 +888,13 @@
                     nature = 'Maya, tegak, diperbesar';
                 }
             } else {
-                // Lensa cekung - selalu maya, tegak, diperkecil
-                nature = 'Maya, tegak, diperkecil';
+                // Lensa cekung
+                nature = `Maya, tegak, diperkecil (M=${Math.abs(m).toFixed(2)})`;
             }
             document.getElementById('infoNature').textContent = nature;
         }
 
-        // Handle window resize
         window.addEventListener('resize', resizeCanvases);
-
-        // Initialize
         resizeCanvases();
         updateScene();
     </script>
